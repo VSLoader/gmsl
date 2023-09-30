@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.8)
+
+add_custom_target(gmsl-patcher ALL
+	COMMAND dotnet build
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_custom_command(TARGET gmsl-patcher POST_BUILD 
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${OutDir}/gmsl"
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/bin/Debug/net6.0/gmsl-patcher.exe "${OutDir}/gmsl"
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/bin/Debug/net6.0/gmsl-patcher.dll "${OutDir}/gmsl"
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/bin/Debug/net6.0/gmsl-patcher.pdb "${OutDir}/gmsl"
+)
