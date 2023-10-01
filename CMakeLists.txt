@@ -14,4 +14,5 @@ file(COPY ${undertalemodtool_SOURCE_DIR} DESTINATION "${CMAKE_SOURCE_DIR}/vendor
 
 set(OutDir "${CMAKE_SOURCE_DIR}/out")
 
+add_subdirectory("gmsl-loader")
 add_subdirectory("gmsl-patcher")
