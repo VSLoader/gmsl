@@ -39,8 +39,8 @@ class Program
         Console.WriteLine("Loading mods...");
         foreach (var modname in modDirs)
         {
-            if (!whitelist.Contains(Path.GetFileName(modname))) continue;
-            if (blacklist.Contains(Path.GetFileName(modname))) continue;
+            if (!whitelist.Contains(Path.GetFileName(modname)) && whitelist.Count != 0) continue;
+            if (blacklist.Contains(Path.GetFileName(modname)) && blacklist.Count != 0) continue;
             
             Console.WriteLine($"Loading mod {Path.GetFileName(modname)}...");
 
@@ -204,9 +204,9 @@ class Program
 
     public static void LoadList(string path, List<string> populate)
     {
-        populate.Add("");
         if (File.Exists(path))
         {
+            populate.Add("");
             foreach (var line in File.ReadAllLines(path))
             {
                 populate.Add(line);
