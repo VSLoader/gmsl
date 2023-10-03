@@ -18,7 +18,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Download mono with chocolatey
-      run: choco install mono -ia "TARGETDIR=C:\Mono"
+      run: choco install mono -ia "INSTALLFOLDER=C:\Mono"
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
