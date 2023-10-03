@@ -8,7 +8,7 @@ on:
 
 env:
   BUILD_TYPE: Release
-  PKG_CONFIG_PATH: C:/Program Files (x86)/Mono/lib/pkgconfig
+  PKG_CONFIG_PATH: "C:/Program Files (x86)/Mono/lib/pkgconfig"
   
 jobs:
   build:
