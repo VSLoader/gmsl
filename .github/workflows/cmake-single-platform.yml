@@ -20,6 +20,9 @@ jobs:
     - name: Download mono with chocolatey
       run: choco install mono -ia "INSTALLFOLDER=C:\Mono"
 
+    - name: Copy mono lib
+      run: copy C:\Mono\lib\mono-2.0-sgen.lib C:\Mono\lib\monosgen-2.0.lib
+
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
@@ -29,6 +32,5 @@ jobs:
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.1.3
       with:
-        # Artifact name
         name: gmsl-win64.zip
         path: out/
