@@ -26,5 +26,4 @@ add_custom_command(TARGET gmsl-interop POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${MONO_LIBRARY_DIRS}/mono/4.5" "${OutDir}/gmsl/interop/lib/mono/4.5"
     COMMAND ${CMAKE_COMMAND} -E copy "${MONO_PREFIX}/bin/mono-2.0-sgen.dll" "${OutDir}/gmsl/interop"
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:gmsl-interop> "${OutDir}/gmsl/interop"
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:gmsl-interop> "${OutDir}/gmsl/interop"
 )
