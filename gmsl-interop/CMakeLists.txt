@@ -15,7 +15,7 @@ if(PkgConfig_FOUND)
     string(REPLACE "monosgen-2.0" "mono-2.0-sgen" MONO_FIXED_LIBRARIES "${MONO_LIBRARIES}")
     target_link_libraries(gmsl-interop ${MONO_FIXED_LIBRARIES})
 else()
-    message(FATAL "Cant find PkgConfig")
+    message(FATAL_ERROR "Cant find PkgConfig")
 endif()
 
 add_compile_definitions(OS_Windows)
