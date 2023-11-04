@@ -3,11 +3,13 @@ using GMSL;
 using UndertaleModLib;
 using System.Diagnostics;
 using UndertaleModLib.Models;
+using System.Text.Json;
 
 class Program
 {
 
     public static uint currentId = 1;
+    public static UndertaleExtensionFile interopExtension;
 
     public static void Main(string[] args)
     {
@@ -34,14 +36,14 @@ class Program
         UndertaleData data = UndertaleIO.Read(stream, handler, handler);
         stream.Dispose();
 
-        UndertaleExtensionFile interopExtension = SetupInterop(data, baseDir);
+        SetupInterop(data, baseDir);
 
         Console.WriteLine("Loading mods...");
         foreach (var modname in modDirs)
         {
             if (!whitelist.Contains(Path.GetFileName(modname)) && whitelist.Count != 0) continue;
             if (blacklist.Contains(Path.GetFileName(modname)) && blacklist.Count != 0) continue;
-            
+
             Console.WriteLine($"Loading mod {Path.GetFileName(modname)}...");
 
             string modPath = Path.Combine(modname, Path.GetFileName(modname) + ".dll");
@@ -113,7 +115,7 @@ class Program
         CreateLegacyScript(data, name, $"interop_set_function(\"{file}\", \"{ns}\", \"{clazz}\", \"{method}\", {argc});\nreturn {name}_interop({args});", argc);
     }
 
-    public static UndertaleExtensionFile SetupInterop(UndertaleData data, string baseDir)
+    public static void SetupInterop(UndertaleData data, string baseDir)
     {
         UndertaleExtensionFunction setFunction = new() {
             Name = data.Strings.MakeString("interop_set_function"),
@@ -140,7 +142,7 @@ class Program
         interop.Files.Add(extensionFile);
         data.Extensions.Add(interop);
 
-        return extensionFile;
+        interopExtension = extensionFile;
     }
 
     public static UndertaleCode CreateCode(UndertaleData data, UndertaleString name, out UndertaleCodeLocals locals) {
