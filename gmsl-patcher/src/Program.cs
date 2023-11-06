@@ -64,6 +64,8 @@ class Program
                 continue;
             }
 
+            Environment.CurrentDirectory = modname;
+
             IGMSLMod mod = (IGMSLMod)Activator.CreateInstance(modClass);
             mod.Load(data);
 
@@ -199,7 +201,7 @@ class Program
         {
             processStartInfo.ArgumentList.Add(args[i]);
         }
-        processStartInfo.Arguments += "-game cache.win";
+        processStartInfo.ArgumentList.Add("-game cache.win");
 
         Process.Start(processStartInfo);
     }
