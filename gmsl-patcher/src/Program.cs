@@ -197,11 +197,12 @@ class Program
             WorkingDirectory = baseDir
         };
 
+        processStartInfo.ArgumentList.Add("-game");
+        processStartInfo.ArgumentList.Add("cache.win");
         for (int i = 1; i < args.Length; i++)
         {
             processStartInfo.ArgumentList.Add(args[i]);
         }
-        processStartInfo.ArgumentList.Add("-game cache.win");
 
         Process.Start(processStartInfo);
     }
