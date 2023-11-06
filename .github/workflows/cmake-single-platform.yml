@@ -16,6 +16,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        submodules: 'true'
 
     - name: Download mono with chocolatey
       run: choco install mono -ia "INSTALLFOLDER=C:\Mono"
