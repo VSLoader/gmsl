@@ -36,6 +36,9 @@ class Program
         UndertaleData data = UndertaleIO.Read(stream, handler, handler);
         stream.Dispose();
 
+        if (File.Exists(Path.Combine(baseDir, "cache.win")))
+            File.Delete(Path.Combine(baseDir, "cache.win"));
+
         SetupInterop(data, baseDir);
 
         Console.WriteLine("Loading mods...");
