@@ -110,16 +110,16 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     std::wstring cmdLine(lpCmdLine);
     std::string cmdLineStr(cmdLine.begin(), cmdLine.end());
 
-    size_t found = cmdLineStr.find("gmsl_console");
+    size_t found = cmdLineStr.find("-gmsl_console");
     if (found != std::string::npos)
     {
         AllocConsole();
         freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
     }
-    
+
     if (!loadProxy()) return FALSE;
 
-    found = cmdLineStr.find("game");
+    found = cmdLineStr.find("-game");
     if (found != std::string::npos) return TRUE;
 
     // https://github.com/OmegaMetor/GS2ML/blob/main/gs2ml-cxx/src/dllmain.cpp#L166
