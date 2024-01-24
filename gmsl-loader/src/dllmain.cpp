@@ -106,14 +106,20 @@ DWORD WINAPI Loader(LPVOID lpParam)
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     if (ul_reason_for_call != DLL_PROCESS_ATTACH) return TRUE;
 
-    AllocConsole();
-    freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
-    if (!loadProxy()) return FALSE;
-
-    LPWSTR lpCmdLine = GetCommandLineW();
+        LPWSTR lpCmdLine = GetCommandLineW();
     std::wstring cmdLine(lpCmdLine);
     std::string cmdLineStr(cmdLine.begin(), cmdLine.end());
-    size_t found = cmdLineStr.find("game");
+
+    size_t found = cmdLineStr.find("gmsl_console");
+    if (found != std::string::npos)
+    {
+        AllocConsole();
+        freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
+    }
+    
+    if (!loadProxy()) return FALSE;
+
+    found = cmdLineStr.find("game");
     if (found != std::string::npos) return TRUE;
 
     // https://github.com/OmegaMetor/GS2ML/blob/main/gs2ml-cxx/src/dllmain.cpp#L166

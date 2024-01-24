@@ -4,6 +4,7 @@ using UndertaleModLib;
 using System.Diagnostics;
 using UndertaleModLib.Models;
 using System.Text.Json;
+using System.Runtime.InteropServices;
 
 class Program
 {
@@ -11,8 +12,16 @@ class Program
     public static uint currentId = 1;
     public static UndertaleExtensionFile interopExtension;
 
+    [DllImport("kernel32.dll")]
+    static extern IntPtr GetConsoleWindow();
+
+    [DllImport("user32.dll")]
+    static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
     public static void Main(string[] args)
     {
+        if (!args.Contains("-gmsl_console")) ShowWindow(GetConsoleWindow(), 0);
+
         string gmslDir = Path.GetDirectoryName(Environment.CurrentDirectory) ?? "error";
         string modDir = Path.Combine(gmslDir, "mods");
         string baseDir = Path.GetDirectoryName(gmslDir) ?? "error";
