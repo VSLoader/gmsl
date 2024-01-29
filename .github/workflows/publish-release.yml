@@ -55,6 +55,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.github_token }}
       with:
         upload_url: ${{ steps.create-release.outputs.upload_url }}
-        asset_path: ./gmsl-win64.zip
+        asset_path: ./artifacts/gmsl-win64
         asset_name: gmsl-win64.zip
         asset_content_type: application/zip
