@@ -49,6 +49,8 @@ jobs:
         draft: false
         prerelease: false
 
+    - run: ls
+
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
       env:
