@@ -25,6 +25,7 @@ jobs:
         path: ${{ github.workspace }}/artifacts
         
     - name: Get commit id
+      id: get-id
       run: |
         echo "::set-output name=id::$(git rev-parse --short HEAD)"
     - run: echo "${{steps.get-id.outputs.id}}"
@@ -38,6 +39,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Create Release
+      id: create-release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -52,7 +54,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.github_token }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        upload_url: ${{ steps.create-release.outputs.upload_url }}
         asset_path: ./gmsl-win64.zip
         asset_name: gmsl-win64.zip
         asset_content_type: application/zip
