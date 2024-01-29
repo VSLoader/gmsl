@@ -23,6 +23,12 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         path: ${{ github.workspace }}/artifacts
+
+    - name: Zip Artifact
+      uses: vimtor/action-zip@v1
+      with:
+        files: artifacts/gmsl-win64/
+        dest: gmsl-win64.zip
         
     - name: Get commit id
       id: get-id
@@ -49,14 +55,12 @@ jobs:
         draft: false
         prerelease: false
 
-    - run: ls ./artifacts/gmsl-win64
-
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.github_token }}
       with:
         upload_url: ${{ steps.create-release.outputs.upload_url }}
-        asset_path: ./artifacts/gmsl-win64
+        asset_path: ./gmsl-win64.zip
         asset_name: gmsl-win64.zip
         asset_content_type: application/zip
