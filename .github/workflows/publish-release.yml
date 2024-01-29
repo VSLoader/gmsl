@@ -1,7 +1,5 @@
 name: Publish build
 
-permissions: read-all|write-all
-
 on:
   workflow_dispatch:
   push:
