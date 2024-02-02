@@ -81,7 +81,7 @@ class Program
                     if (load == null) continue;
 
                     object gs2mlClass = Activator.CreateInstance(type);
-                    load.Invoke(gs2mlClass, new object[] { data });
+                    load.Invoke(gs2mlClass, new object[] { 0, data });
                     loaded = true;
 
                     break;
