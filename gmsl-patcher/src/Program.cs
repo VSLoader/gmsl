@@ -72,7 +72,17 @@ class Program
 
             if(modClass == null) 
             {
-                Console.WriteLine($"Cant load mod {modname} cant find class inheriting IGMSLMod");
+                Console.WriteLine($"Cant load mod {modname} cant find class inheriting IGMSLMod, trying to load as gs2ml");
+
+                foreach (var type in modAssembly.GetTypes())
+                {
+                    MethodInfo load = type.GetMethod("Load");
+                    if (load == null) continue;
+
+                    object gs2mlClass = Activator.CreateInstance(type);
+                    load.Invoke(gs2mlClass, new object[] { data });
+                }
+
                 continue;
             }
 
