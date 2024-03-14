@@ -46,6 +46,7 @@ YYEXPORT void YYExtensionInitialise(const struct YYRunnerInterface* _pFunctions,
             std::filesystem::path fn = entry.path().filename();
             std::filesystem::path modpath = directoryPath / fn / (fn.string() + ".dll");
             std::cout << modpath << std::endl;
+	    if (!std::filesystem::exists(modpath)) continue;
             MonoAssembly *assembly = mono_domain_assembly_open(domain, modpath.string().c_str());
             MonoImage *image = mono_assembly_get_image(assembly);
             mods[fn.string()] = image;
