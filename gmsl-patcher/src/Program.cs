@@ -1,86 +1,88 @@
 using System.Reflection;
-using GMSL;
 using UndertaleModLib;
 using System.Diagnostics;
 using UndertaleModLib.Models;
 using System.Text.Json;
 using System.Runtime.InteropServices;
+using GMSL;
+using GMSL.Logger;
 
-class Program
+namespace gmsl_patcher;
+
+public static class Program
 {
-
-    public static uint currentId = 1;
-    public static UndertaleExtensionFile interopExtension;
+    private static uint _currentId = 1;
+    private static UndertaleExtensionFile _interopExtension = null!;
 
     [DllImport("kernel32.dll")]
-    static extern IntPtr GetConsoleWindow();
+    private static extern IntPtr GetConsoleWindow();
 
     [DllImport("user32.dll")]
-    static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
     public static void Main(string[] args)
     {
-        if (!args.Contains("-gmsl_console")) ShowWindow(GetConsoleWindow(), 0);
-
-        string gmslDir = Path.GetDirectoryName(Environment.CurrentDirectory) ?? "error";
-        string modDir = Path.Combine(gmslDir, "mods");
-        string baseDir = Path.GetDirectoryName(gmslDir) ?? "error";
-        string[] modDirs = Directory.GetDirectories(modDir);
+        if (!args.Contains("-gmsl_console") && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            ShowWindow(GetConsoleWindow(), 0);
+    
+        var gmslDir = Path.GetDirectoryName(Environment.CurrentDirectory);
+        var modDir = Path.Combine(gmslDir!, "mods");
+        var baseDir = Path.GetDirectoryName(gmslDir);
+        var modDirs = Directory.GetDirectories(modDir);
         List<string> whitelist = new();
         List<string> blacklist = new();
 
-        if (modDirs.Length == 0) 
+        if (modDirs.Length == 0)
         {
-            File.Copy(Path.Combine(baseDir, "data.win"), Path.Combine(baseDir, "cache.win"), true);
-            StartGame(args, baseDir);
+            File.Copy(Path.Combine(baseDir!, "data.win"), Path.Combine(baseDir!, "cache.win"), true);
+            StartGame(args, baseDir!);
             return;
         }
 
         LoadList(Path.Combine(modDir, "whitelist.txt"), whitelist);
         LoadList(Path.Combine(modDir, "blacklist.txt"), blacklist);
 
-        Console.WriteLine("Reading data.win...");
-        FileStream stream = File.OpenRead(Path.Combine(baseDir, "data.win"));
-        void handler(string e) {};
-        UndertaleData data = UndertaleIO.Read(stream, handler, handler);
+        Logger.Info("Reading data.win...");
+        var stream = File.OpenRead(Path.Combine(baseDir!, "data.win"));
+        var data = UndertaleIO.Read(stream, Logger.Error, _ => { });
         stream.Dispose();
 
-        if (File.Exists(Path.Combine(baseDir, "cache.win")))
-            File.Delete(Path.Combine(baseDir, "cache.win"));
+        if (File.Exists(Path.Combine(baseDir!, "cache.win")))
+            File.Delete(Path.Combine(baseDir!, "cache.win"));
 
-        SetupInterop(data, baseDir);
+        SetupInterop(data, baseDir!);
 
-        Console.WriteLine("Loading mods...");
+        Logger.Info("Loading mods...");
         foreach (var modname in modDirs)
         {
             if (!whitelist.Contains(Path.GetFileName(modname)) && whitelist.Count != 0) continue;
             if (blacklist.Contains(Path.GetFileName(modname)) && blacklist.Count != 0) continue;
 
-            Console.WriteLine($"Loading mod {Path.GetFileName(modname)}...");
+            Logger.Info($"Loading mod {Path.GetFileName(modname)}...");
 
-            string modPath = Path.Combine(modname, Path.GetFileName(modname) + ".dll");
+            var modPath = Path.Combine(modname, Path.GetFileName(modname) + ".dll");
 
             if (!File.Exists(modPath))
             {
-                Console.WriteLine($"Problem loading mod {modname} cant find {modPath}");
+                Logger.Error($"Error loading mod {modname} cant find {modPath}");
                 continue;
             }
 
-            Assembly modAssembly = Assembly.LoadFrom(modPath);
-            Type modClass = modAssembly.GetTypes()
+            var modAssembly = Assembly.LoadFrom(modPath);
+            var modClass = modAssembly.GetTypes()
                     .FirstOrDefault(modType => modType.GetInterfaces().Contains(typeof(IGMSLMod)));
 
-            if(modClass == null) 
+            if (modClass == null && !File.Exists(Path.Combine(modname, "modinfo.json")))
             {
-                Console.WriteLine($"Cant load mod {modname} cant find class inheriting IGMSLMod, trying to load as gs2ml");
+                Logger.Warn($"Cant load mod {modname} cant find class inheriting IGMSLMod, trying to load as gs2ml");
 
                 var loaded = false;
                 foreach (var type in modAssembly.GetTypes())
                 {
-                    MethodInfo load = type.GetMethod("Load");
+                    var load = type.GetMethod("Load");
                     if (load == null) continue;
 
-                    object gs2mlClass = Activator.CreateInstance(type);
+                    var gs2mlClass = Activator.CreateInstance(type);
                     load.Invoke(gs2mlClass, new object[] { 0, data });
                     loaded = true;
 
@@ -88,74 +90,89 @@ class Program
                 }
 
                 if (!loaded)
-                    Console.WriteLine($"Couldnt load mod {modname} as gmsl or gs2ml mod");
+                    Logger.Error($"Couldn't load mod {modname} as gmsl or gs2ml mod");
 
                 continue;
             }
 
             Environment.CurrentDirectory = modname;
 
-            IGMSLMod mod = (IGMSLMod)Activator.CreateInstance(modClass);
-            mod.Load(data);
+            var info = JsonSerializer.Deserialize<ModInfo>(File.ReadAllText(Path.Combine(modname, "modinfo.json")));
+
+            var missing = false;
+            foreach (var dependency in info!.Dependencies)
+            {
+                if (modDirs.Contains(dependency)) continue;
+                
+                Logger.Error($"Mod {modname} is missing dependency {dependency}");
+                missing = true;
+            }
+            if (missing) continue;
+
+            var mod = (IGMSLMod)Activator.CreateInstance(modClass!)!;
+            mod!.Load(data, info!);
 
             foreach (var type in modAssembly.GetTypes())
             {
                 foreach (var method in type.GetMembers())
                 {
-                    GmlInterop? interop = method.GetCustomAttribute<GmlInterop>();
+                    var interop = method.GetCustomAttribute<GmlInterop>();
                     if (interop == null) continue;
 
                     CreateInteropFunction(
-                        interop.Name, 
-                        interop.Argc, 
-                        method.DeclaringType.Namespace,
-                        method.DeclaringType.Name,
-                        method.Name,
+                        interop,
+                        method,
                         Path.GetFileNameWithoutExtension(modPath),
-                        interopExtension,
                         data
                     );
                 }
             }
         }
-
-        Console.WriteLine("Saving modified data.win...");
-        stream = File.OpenWrite(Path.Combine(baseDir, "cache.win"));
+        
+        Logger.Info("Saving modified data.win...");
+        stream = File.OpenWrite(Path.Combine(baseDir!, "cache.win"));
         UndertaleIO.Write(stream, data);
         stream.Dispose();
 
-        Console.WriteLine("Launching game...");
-        StartGame(args, baseDir);
+        Logger.Info("Launching game...");
+        StartGame(args, baseDir!);
     }
 
-    public static void CreateInteropFunction(string name, ushort argc, string ns, string clazz, string method, string file, UndertaleExtensionFile extension, UndertaleData data)
+    private static void CreateInteropFunction(GmlInterop interop, MemberInfo method, string file, UndertaleData data)
     {
-        currentId++;
-        UndertaleExtensionFunction function = new() {
-            Name = data.Strings.MakeString(name + "_interop"),
+        _currentId++;
+        UndertaleExtensionFunction function = new()
+        {
+            Name = data.Strings.MakeString(interop.Name + "_interop"),
             ExtName = data.Strings.MakeString("interop_function"),
             Kind = 11,
-            ID = currentId
+            ID = _currentId
         };
-        extension.Functions.Add(function);
-        string args = "";
-        for (int i = 0; i < argc; i++)
+        _interopExtension.Functions.Add(function);
+        var args = "";
+        for (var i = 0; i < interop.Argc; i++)
         {
-            args += $"argument{i}{(i != argc - 1 ? ", " : "")}";
+            args += $"argument{i}{(i != interop.Argc - 1 ? ", " : "")}";
         }
-        CreateLegacyScript(data, name, $"interop_set_function(\"{file}\", \"{ns}\", \"{clazz}\", \"{method}\", {argc});\nreturn {name}_interop({args});", argc);
+        CreateLegacyScript(
+            data,
+            interop.Name,
+            $"interop_set_function(\"{file}\", \"{method.DeclaringType!.Namespace}\", \"{method.DeclaringType.Name}\", \"{method.Name}\", {interop.Argc});\nreturn {interop.Argc}_interop({args});",
+            interop.Argc);
     }
 
-    public static void SetupInterop(UndertaleData data, string baseDir)
+    private static void SetupInterop(UndertaleData data, string baseDir)
     {
-        UndertaleExtensionFunction setFunction = new() {
+        UndertaleExtensionFunction setFunction = new()
+        {
             Name = data.Strings.MakeString("interop_set_function"),
             ExtName = data.Strings.MakeString("interop_set_function"),
             Kind = 11,
-            ID = currentId
+            ID = _currentId
         };
 
-        UndertaleExtensionFile extensionFile = new() {
+        UndertaleExtensionFile extensionFile = new()
+        {
             Kind = UndertaleExtensionKind.Dll,
             Filename = data.Strings.MakeString(Path.Combine(baseDir, "gmsl", "interop", "gmsl-interop.dll")),
             InitScript = data.Strings.MakeString(""),
@@ -173,20 +190,24 @@ class Program
         interop.Files.Add(extensionFile);
         data.Extensions.Add(interop);
 
-        interopExtension = extensionFile;
+        _interopExtension = extensionFile;
     }
 
-    public static UndertaleCode CreateCode(UndertaleData data, UndertaleString name, out UndertaleCodeLocals locals) {
-        locals = new UndertaleCodeLocals {
+    private static UndertaleCode CreateCode(UndertaleData data, UndertaleString name, out UndertaleCodeLocals locals)
+    {
+        locals = new UndertaleCodeLocals
+        {
             Name = name
         };
-        locals.Locals.Add(new UndertaleCodeLocals.LocalVar {
+        locals.Locals.Add(new UndertaleCodeLocals.LocalVar
+        {
             Name = data.Strings.MakeString("arguments"),
             Index = 2
         });
         data.CodeLocals.Add(locals);
 
-        UndertaleCode mainCode = new() {
+        UndertaleCode mainCode = new()
+        {
             Name = name,
             LocalsCount = 1,
             ArgumentsCount = 0
@@ -196,20 +217,23 @@ class Program
         return mainCode;
     }
 
-    public static UndertaleScript CreateLegacyScript(UndertaleData data, string name, string code, ushort argCount) {
-        UndertaleString mainName = data.Strings.MakeString(name, out int nameIndex);
-        UndertaleCode mainCode = CreateCode(data, mainName, out _);
+    private static UndertaleScript CreateLegacyScript(UndertaleData data, string name, string code, ushort argCount)
+    {
+        var mainName = data.Strings.MakeString(name, out var nameIndex);
+        var mainCode = CreateCode(data, mainName, out _);
         mainCode.ArgumentsCount = argCount;
 
         mainCode.ReplaceGML(code, data);
 
-        UndertaleScript script = new() {
+        UndertaleScript script = new()
+        {
             Name = mainName,
             Code = mainCode
         };
         data.Scripts.Add(script);
 
-        UndertaleFunction function = new() {
+        UndertaleFunction function = new()
+        {
             Name = mainName,
             NameStringID = nameIndex
         };
@@ -218,17 +242,17 @@ class Program
         return script;
     }
 
-    public static void StartGame(string[] args, string baseDir)
+    private static void StartGame(string[] args, string baseDir)
     {
         ProcessStartInfo processStartInfo = new()
         {
             FileName = Path.Combine(baseDir, args[0]),
-            WorkingDirectory = baseDir
+            WorkingDirectory = baseDir,
         };
 
         processStartInfo.ArgumentList.Add("-game");
         processStartInfo.ArgumentList.Add("cache.win");
-        for (int i = 1; i < args.Length; i++)
+        for (var i = 1; i < args.Length; i++)
         {
             processStartInfo.ArgumentList.Add(args[i]);
         }
@@ -236,15 +260,11 @@ class Program
         Process.Start(processStartInfo);
     }
 
-    public static void LoadList(string path, List<string> populate)
+    private static void LoadList(string path, List<string> populate)
     {
-        if (File.Exists(path))
-        {
-            populate.Add("");
-            foreach (var line in File.ReadAllLines(path))
-            {
-                populate.Add(line);
-            }
-        }
+        if (!File.Exists(path)) return;
+
+        populate.Add("");
+        populate.AddRange(File.ReadAllLines(path));
     }
 }
