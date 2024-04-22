@@ -32,7 +32,7 @@ bool loadProxy() {
     const auto lib = LoadLibrary(libPath.string().c_str());
     if(!lib) return false;
 
-    #define DLL_NAME(name) DLL_PROXY_ORIGINAL(name) = GetProcAddress(lib, "name");
+    #define DLL_NAME(name) DLL_PROXY_ORIGINAL(name) = GetProcAddress(lib, #name);
     #include "../include/proxy.h"
     #undef DLL_NAME
 
