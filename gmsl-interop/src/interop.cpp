@@ -28,14 +28,14 @@ YYEXPORT void YYExtensionInitialise(const struct YYRunnerInterface* _pFunctions,
 {
 	memcpy(&gs_runnerInterface, _pFunctions, sizeof(YYRunnerInterface));
 	g_pYYRunnerInterface = &gs_runnerInterface;
-
+	
 	if (_functions_size < sizeof(YYRunnerInterface)) {
-		DebugConsoleOutput("ERROR : runner interface mismatch in extension DLL\n");
+		std::cout << "ERROR : runner interface mismatch in extension DLL" << std::endl;
 	}
+	
+	std::cout << "YYExtensionInitialise CONFIGURED" << std::endl;
 
-	DebugConsoleOutput("YYExtensionInitialise CONFIGURED\n");
-
-    DebugConsoleOutput("Loading mods for interop...\n");
+    std::cout << "Loading mods for interop..." << std::endl;
     mono_set_assemblies_path("gmsl/interop/lib");
     domain = mono_jit_init("gmsl");
 
@@ -108,7 +108,7 @@ YYEXPORT void interop_function(RValue& Result, CInstance* selfinst, CInstance* o
             std::cout << mono_string_to_utf8(trace) << std::endl;
         }
 
-        YYError("Exception from c# thrown check console for more info!");
+        std::cin.get(); // freeze the program to signify something is wrong
     }
     MonoClass* classPtr = mono_object_get_class(returnValue);
     const char* typeName = mono_class_get_name(classPtr);
