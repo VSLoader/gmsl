@@ -11,7 +11,7 @@ namespace gmsl_patcher;
 
 public static class Program
 {
-    private static uint _currentId = 1;
+    private static uint _currentId = 0;
     private static UndertaleExtensionFile _interopExtension = null!;
 
     [DllImport("kernel32.dll")]
@@ -163,6 +163,21 @@ public static class Program
 
     private static void SetupInterop(UndertaleData data, string baseDir)
     {
+        foreach (var extension in _data.Extensions)
+        {
+            foreach (var file in extension.Files)
+            {
+                foreach (var function in file.Functions)
+                {
+                    if (function.ID >= _currentId)
+                    {
+                        _currentId = function.ID;
+                    }
+                }
+            }
+        }
+        _currentId++;
+        
         UndertaleExtensionFunction setFunction = new()
         {
             Name = data.Strings.MakeString("interop_set_function"),
