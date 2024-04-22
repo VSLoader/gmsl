@@ -163,7 +163,7 @@ public static class Program
 
     private static void SetupInterop(UndertaleData data, string baseDir)
     {
-        foreach (var extension in _data.Extensions)
+        foreach (var extension in data.Extensions)
         {
             foreach (var file in extension.Files)
             {
