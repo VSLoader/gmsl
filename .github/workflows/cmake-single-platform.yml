@@ -13,22 +13,30 @@ on:
 
 env:
   BUILD_TYPE: Release
-  PKG_CONFIG_PATH: C:\Mono\lib\pkgconfig
   
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: 'true'
 
-    - name: Download mono with chocolatey
-      run: choco install mono --ignore-checksums -ia "INSTALLFOLDER=C:\Mono"
+    - name: Install mingw-w64
+      run: sudo apt-get install -y mingw-w64
+
+    - name: Add mono repository
+      run: sudo apt install ca-certificates gnupg && \
+           sudo gpg --homedir /tmp --no-default-keyring --keyring /usr/share/keyrings/mono-official-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && \
+           echo "deb [signed-by=/usr/share/keyrings/mono-official-archive-keyring.gpg] https://download.mono-project.com/repo/ubuntu stable-focal main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list && \
+           sudo apt update
+
+    - name: Install mono
+      run: sudo apt-get install mono-complete
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE=Toolchain-mingw-w64.cmake
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
