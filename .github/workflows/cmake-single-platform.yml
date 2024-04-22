@@ -28,9 +28,6 @@ jobs:
       with:
         platform: x64
 
-    - name: Test
-      run: cmake -G
-
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
