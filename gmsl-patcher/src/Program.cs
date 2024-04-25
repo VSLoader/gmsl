@@ -123,7 +123,7 @@ public static class Program
 
                 if (File.Exists("error.txt")) File.Delete("error.txt");
 
-                File.WriteAllText("error.txt"), ex.ToString();
+                File.WriteAllText("error.txt", ex.ToString());
 
                 ShowWindow(GetConsoleWindow(), 1);
                 
