@@ -27,7 +27,7 @@ jobs:
     - name: Download mono with chocolatey
       run: choco install mono --ignore-checksums -ia "INSTALLFOLDER=C:\Mono"
 
-    - name: Install pkgconfiglite witb chocolatey
+    - name: Install pkgconfiglite with chocolatey
       run: choco install pkgconfiglite
 
     - name: Configure CMake
