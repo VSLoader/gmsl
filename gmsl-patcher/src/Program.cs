@@ -123,10 +123,12 @@ public static class Program
 
                 if (File.Exists("error.txt")) File.Delete("error.txt");
 
-                File.WriteAllText("error.txt", ex.ToString());
+                File.WriteAllText("error.txt"), ex.ToString();
 
-                ShowWindow(GetConsoleWindow(), 0);
-                Thread.Sleep(5000);
+                ShowWindow(GetConsoleWindow(), 1);
+                
+                Logger.Info("Please press enter to continue launching...");
+                Console.ReadLine();
 
                 StartGame(args, baseDir!, false);
                 return;
@@ -285,11 +287,12 @@ public static class Program
             WorkingDirectory = baseDir,
         };
 
+        processStartInfo.ArgumentList.Add("-game");
+
         if (loadmods)
-        {
-            processStartInfo.ArgumentList.Add("-game");
             processStartInfo.ArgumentList.Add("cache.win");
-        }
+        else
+            processStartInfo.ArgumentList.Add("data.win");
 
         for (var i = 1; i < args.Length; i++)
         {
