@@ -125,6 +125,9 @@ public static class Program
 
                 File.WriteAllText("error.txt", ex.ToString());
 
+                ShowWindow(GetConsoleWindow(), 0);
+                Thread.Sleep(5000);
+
                 StartGame(args, baseDir!, false);
                 return;
             }
