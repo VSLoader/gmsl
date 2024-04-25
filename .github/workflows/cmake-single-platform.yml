@@ -13,20 +13,22 @@ on:
 
 env:
   BUILD_TYPE: Release
+  PKG_CONFIG_PATH: C:\Mono\lib\pkgconfig
   
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: 'true'
 
-    - name: Set up MinGW
-      uses: egor-tensin/setup-mingw@v2
-      with:
-        platform: x64
+    - name: Download mono with chocolatey
+      run: choco install mono --ignore-checksums -ia "INSTALLFOLDER=C:\Mono"
+
+    - name: Install pkgconfiglite witb chocolatey
+      run: choco install pkgconfiglite
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
