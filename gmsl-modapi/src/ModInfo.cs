@@ -11,5 +11,5 @@ public class ModInfo
     public string Description { get; set; }
     public List<string> Dependencies { get; set; }
     
-    [JsonIgnore]public string ModDir => Environment.CurrentDirectory;
+    [JsonIgnore] public string ModDir => Environment.CurrentDirectory;
 }

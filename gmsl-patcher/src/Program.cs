@@ -110,7 +110,24 @@ public static class Program
             if (missing) continue;
 
             var mod = (IGMSLMod)Activator.CreateInstance(modClass!)!;
-            mod!.Load(data, info!);
+
+            try
+            {
+                mod!.Load(data, info!);
+            }
+            catch (Exception ex)
+            {
+                Logger.Info($"The mod ${modname} had an error while loading");
+                Logger.Info("It has been logged to a file and the normal game will launch");
+                Logger.Error(ex.ToString());
+
+                if (File.Exists("error.txt")) File.Delete("error.txt");
+
+                File.WriteAllText("error.txt", ex.ToString());
+
+                StartGame(args, baseDir!, false);
+                return;
+            }
 
             foreach (var type in modAssembly.GetTypes())
             {
@@ -257,7 +274,7 @@ public static class Program
         return script;
     }
 
-    private static void StartGame(string[] args, string baseDir)
+    private static void StartGame(string[] args, string baseDir, bool loadmods = true)
     {
         ProcessStartInfo processStartInfo = new()
         {
@@ -265,8 +282,12 @@ public static class Program
             WorkingDirectory = baseDir,
         };
 
-        processStartInfo.ArgumentList.Add("-game");
-        processStartInfo.ArgumentList.Add("cache.win");
+        if (loadmods)
+        {
+            processStartInfo.ArgumentList.Add("-game");
+            processStartInfo.ArgumentList.Add("cache.win");
+        }
+
         for (var i = 1; i < args.Length; i++)
         {
             processStartInfo.ArgumentList.Add(args[i]);

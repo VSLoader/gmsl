@@ -4,6 +4,9 @@
 #include <filesystem>
 #include <iostream>
 #include <shellapi.h>
+#include <fstream>
+#include <fcntl.h>
+#include <io.h>
 
 // https://github.com/cgytrus/gmml/blob/main/gmml/src/dllmain.cpp#L26
 constexpr auto PROXY_DLL = TEXT("version.dll");

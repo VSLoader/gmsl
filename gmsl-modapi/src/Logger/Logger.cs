@@ -2,6 +2,7 @@ namespace GMSL.Logger;
 
 public static class Logger
 {
+
     private static void Log(object message, LogLevel level)
     {
         switch (level)
