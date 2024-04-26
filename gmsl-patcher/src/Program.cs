@@ -102,7 +102,7 @@ public static class Program
             var missing = false;
             foreach (var dependency in info!.Dependencies)
             {
-                if (modDirs.Contains(dependency)) continue;
+                if (modDirs.Contains(Path.Combine(Path.GetDirectoryName(modDirs[0]), dependency))) continue;
                 
                 Logger.Error($"Mod {modname} is missing dependency {dependency}");
                 missing = true;
