@@ -165,7 +165,7 @@ public static class Program
         _currentId++;
         UndertaleExtensionFunction function = new()
         {
-            Name = data.Strings.MakeString(interop.Name + "_interop"),
+            Name = data.Strings.MakeString($"{interop.Name}_interop"),
             ExtName = data.Strings.MakeString("interop_function"),
             Kind = 11,
             ID = _currentId
@@ -179,7 +179,7 @@ public static class Program
         CreateLegacyScript(
             data,
             interop.Name,
-            $"interop_set_function(\"{file}\", \"{method.DeclaringType!.Namespace}\", \"{method.DeclaringType.Name}\", \"{method.Name}\", {interop.Argc});\nreturn {interop.Argc}_interop({args});",
+            $"interop_set_function(\"{file}\", \"{method.DeclaringType!.Namespace}\", \"{method.DeclaringType.Name}\", \"{method.Name}\", {interop.Argc});\nreturn {interop.Name}_interop({args});",
             interop.Argc);
     }
 
