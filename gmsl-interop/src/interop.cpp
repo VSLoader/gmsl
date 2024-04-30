@@ -86,6 +86,15 @@ YYEXPORT void interop_function(RValue& Result, CInstance* selfinst, CInstance* o
                 args[i] = &arg[i].val;
                 break;
 
+            case VALUE_BOOL:
+                args[i] = &arg[i].val;
+                break;
+
+            default:
+                std::cout << "Unknown value type: " << elem.kind;
+                return;
+
+            // This has to be at the bottom for some reason idfk why
             case VALUE_STRING:
                 MonoString* string = mono_string_new(domain, elem.GetString());
                 args[i] = string;
