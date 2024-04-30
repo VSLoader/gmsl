@@ -162,7 +162,21 @@ public static class Program
 
     private static void CreateInteropFunction(GmlInterop interop, MemberInfo method, string file, UndertaleData data)
     {
+        foreach (var extension in data.Extensions)
+        {
+            foreach (var file in extension.Files)
+            {
+                foreach (var function in file.Functions)
+                {
+                    if (function.ID >= _currentId)
+                    {
+                        _currentId = function.ID;
+                    }
+                }
+            }
+        }
         _currentId++;
+        
         UndertaleExtensionFunction function = new()
         {
             Name = data.Strings.MakeString($"{interop.Name}_interop"),
@@ -185,21 +199,6 @@ public static class Program
 
     private static void SetupInterop(UndertaleData data, string baseDir)
     {
-        foreach (var extension in data.Extensions)
-        {
-            foreach (var file in extension.Files)
-            {
-                foreach (var function in file.Functions)
-                {
-                    if (function.ID >= _currentId)
-                    {
-                        _currentId = function.ID;
-                    }
-                }
-            }
-        }
-        _currentId++;
-        
         UndertaleExtensionFunction setFunction = new()
         {
             Name = data.Strings.MakeString("interop_set_function"),
