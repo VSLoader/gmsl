@@ -11,7 +11,6 @@ namespace gmsl_patcher;
 
 public static class Program
 {
-    private static uint _currentId = 0;
     private static UndertaleExtensionFile _interopExtension = null!;
 
     [DllImport("kernel32.dll")]
@@ -162,27 +161,12 @@ public static class Program
 
     private static void CreateInteropFunction(GmlInterop interop, MemberInfo method, string file, UndertaleData data)
     {
-        foreach (var extension in data.Extensions)
-        {
-            foreach (var file in extension.Files)
-            {
-                foreach (var function in file.Functions)
-                {
-                    if (function.ID >= _currentId)
-                    {
-                        _currentId = function.ID;
-                    }
-                }
-            }
-        }
-        _currentId++;
-        
         UndertaleExtensionFunction function = new()
         {
             Name = data.Strings.MakeString($"{interop.Name}_interop"),
             ExtName = data.Strings.MakeString("interop_function"),
             Kind = 11,
-            ID = _currentId
+            ID = Extension.NextId()
         };
         _interopExtension.Functions.Add(function);
         var args = "";
@@ -199,12 +183,14 @@ public static class Program
 
     private static void SetupInterop(UndertaleData data, string baseDir)
     {
+        Extension.Init(data);
+
         UndertaleExtensionFunction setFunction = new()
         {
             Name = data.Strings.MakeString("interop_set_function"),
             ExtName = data.Strings.MakeString("interop_set_function"),
             Kind = 11,
-            ID = _currentId
+            ID = Extension.NextId()
         };
 
         UndertaleExtensionFile extensionFile = new()
