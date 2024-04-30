@@ -29,6 +29,8 @@ public static class Extension
             _currentId++;
         }
 
+        _takenIds.Add(_currentId);
+
         return _currentId;
     }
 }
