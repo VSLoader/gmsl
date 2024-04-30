@@ -6,7 +6,7 @@ public static class Extension
 {
 
     private static List<uint> _takenIds = new();
-    private static uint _currentId = 0;
+    private static uint _currentId = 1;
 
     public static void Init(UndertaleData data)
     {
