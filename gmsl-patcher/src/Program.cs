@@ -12,6 +12,8 @@ namespace gmsl_patcher;
 public static class Program
 {
     private static UndertaleExtensionFile _interopExtension = null!;
+    private static List<string> _whitelist = new();
+    private static List<string> _blacklist = new();
 
     [DllImport("kernel32.dll")]
     private static extern IntPtr GetConsoleWindow();
@@ -23,13 +25,11 @@ public static class Program
     {
         if (!args.Contains("-gmsl_console") && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             ShowWindow(GetConsoleWindow(), 0);
-    
+
         var gmslDir = Path.GetDirectoryName(Environment.CurrentDirectory);
         var modDir = Path.Combine(gmslDir!, "mods");
         var baseDir = Path.GetDirectoryName(gmslDir);
         var modDirs = Directory.GetDirectories(modDir);
-        List<string> whitelist = new();
-        List<string> blacklist = new();
 
         if (modDirs.Length == 0)
         {
@@ -38,8 +38,8 @@ public static class Program
             return;
         }
 
-        LoadList(Path.Combine(modDir, "whitelist.txt"), whitelist);
-        LoadList(Path.Combine(modDir, "blacklist.txt"), blacklist);
+        LoadList(Path.Combine(modDir, "whitelist.txt"), _whitelist);
+        LoadList(Path.Combine(modDir, "blacklist.txt"), _blacklist);
 
         Logger.Info("Reading data.win...");
         var stream = File.OpenRead(Path.Combine(baseDir!, "data.win"));
@@ -51,90 +51,93 @@ public static class Program
 
         SetupInterop(data, baseDir!);
 
-        Logger.Info("Loading mods...");
-        foreach (var modname in modDirs)
+        Logger.Info("Loading mod info's...");
+
+        List<ModInfo> mods = new();
+
+        foreach (var mod in modDirs)
         {
-            if (!whitelist.Contains(Path.GetFileName(modname)) && whitelist.Count != 0) continue;
-            if (blacklist.Contains(Path.GetFileName(modname)) && blacklist.Count != 0) continue;
+            var modInfoPath = Path.Combine(mod, "modinfo.json");
+            if (!File.Exists(modInfoPath))
+            {
+                Logger.Warn($"Not loading mod {mod} because it doesn't have a modinfo.json");
+                continue;
+            }
 
-            Logger.Info($"Loading mod {Path.GetFileName(modname)}...");
+            var info = JsonSerializer.Deserialize<ModInfo>(File.ReadAllText(modInfoPath));
 
-            var modPath = Path.Combine(modname, Path.GetFileName(modname) + ".dll");
+            if (info == null)
+            {
+                Logger.Warn($"Not loading mod {mod} because it's modinfo is invalid");
+                continue;
+            }
+            info.ModDir = mod;
+            mods.Add(info);
+        }
+
+        Logger.Info("Got mods:");
+        foreach (var mod in mods)
+        {
+            Logger.Info($"{mod.Name} : {mod.ID}");
+        }
+
+        Logger.Info("Building load order...");
+
+        var loadOrder = BuildLoadOrder(mods);
+
+        Logger.Info("Built load order:");
+        foreach (var mod in loadOrder)
+        {
+            Logger.Info($"{mod.Name} : {mod.ID}");
+        }
+
+        Logger.Info("Loading mods...");
+
+        foreach (var mod in loadOrder)
+        {
+            Logger.Info($"Loading {mod.ID}");
+
+            var modPath = Path.Combine(mod.ModDir, mod.Name + ".dll");
 
             if (!File.Exists(modPath))
             {
-                Logger.Error($"Error loading mod {modname} cant find {modPath}");
+                Logger.Error($"Error loading mod {mod.ID} cant find {modPath}");
                 continue;
             }
 
             var modAssembly = Assembly.LoadFrom(modPath);
-            var modClass = modAssembly.GetTypes()
-                    .FirstOrDefault(modType => modType.GetInterfaces().Contains(typeof(IGMSLMod)));
-
-            if (modClass == null && !File.Exists(Path.Combine(modname, "modinfo.json")))
-            {
-                Logger.Warn($"Cant load mod {modname} cant find class inheriting IGMSLMod, trying to load as gs2ml");
-
-                var loaded = false;
-                foreach (var type in modAssembly.GetTypes())
-                {
-                    var load = type.GetMethod("Load");
-                    if (load == null) continue;
-
-                    var gs2mlClass = Activator.CreateInstance(type);
-                    load.Invoke(gs2mlClass, new object[] { 0, data });
-                    loaded = true;
-
-                    break;
-                }
-
-                if (!loaded)
-                    Logger.Error($"Couldn't load mod {modname} as gmsl or gs2ml mod");
-
-                continue;
-            }
-
-            Environment.CurrentDirectory = modname;
-
-            var info = JsonSerializer.Deserialize<ModInfo>(File.ReadAllText(Path.Combine(modname, "modinfo.json")));
-
-            var missing = false;
-            foreach (var dependency in info!.Dependencies)
-            {
-                if (modDirs.Contains(Path.Combine(Path.GetDirectoryName(modDirs[0]), dependency))) continue;
-                
-                Logger.Error($"Mod {modname} is missing dependency {dependency}");
-                missing = true;
-            }
-            if (missing) continue;
-
-            var mod = (IGMSLMod)Activator.CreateInstance(modClass!)!;
-
-            try
-            {
-                mod!.Load(data, info!);
-            }
-            catch (Exception ex)
-            {
-                Logger.Info($"The mod ${modname} had an error while loading");
-                Logger.Info("It has been logged to a file and the normal game will launch");
-                Logger.Error(ex.ToString());
-
-                if (File.Exists("error.txt")) File.Delete("error.txt");
-
-                File.WriteAllText("error.txt", ex.ToString());
-
-                ShowWindow(GetConsoleWindow(), 1);
-                
-                Logger.Info("Please press enter to continue launching...");
-                Console.ReadLine();
-
-                StartGame(args, baseDir!, false);
-                return;
-            }
 
             foreach (var type in modAssembly.GetTypes())
             {
+                if (type.GetInterfaces().Contains(typeof(ModInfo)))
+                {
+                    var instance = (IGMSLMod)Activator.CreateInstance(type)!;
+                    Environment.CurrentDirectory = mod.ModDir;
+
+                    try
+                    {
+                        instance.Load(data, mod);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Info($"The mod {mod.ID} had an error while loading");
+                        Logger.Info("It has been logged to a file and the normal game will launch");
+                        Logger.Error(ex.ToString());
+
+                        if (File.Exists("error.txt")) File.Delete("error.txt");
+
+                        File.WriteAllText("error.txt", ex.ToString());
+
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) ShowWindow(GetConsoleWindow(), 1);
+
+                        Logger.Info("Please press enter to continue launching...");
+                        Console.ReadLine();
+
+                        StartGame(args, baseDir!, false);
+                        return;
+                    }
+                }
+
                 foreach (var method in type.GetMembers())
                 {
                     var interop = method.GetCustomAttribute<GmlInterop>();
@@ -149,14 +152,52 @@ public static class Program
                 }
             }
         }
-        
+
         Logger.Info("Saving modified data.win...");
         stream = File.OpenWrite(Path.Combine(baseDir!, "cache.win"));
         UndertaleIO.Write(stream, data);
         stream.Dispose();
 
         Logger.Info("Launching game...");
+        Console.ReadLine();
         StartGame(args, baseDir!);
+    }
+
+    private static List<ModInfo> BuildLoadOrder(List<ModInfo> mods)
+    {
+        var order = new List<ModInfo>();
+        bool useWhitelist = _whitelist.Count > 0;
+
+        foreach (var mod in mods)
+        {
+            if (useWhitelist)
+            {
+                if (!_whitelist.Contains(mod.ID)) continue;
+            }
+            else
+            {
+                if (_blacklist.Contains(mod.ID)) continue;
+            }
+
+            bool missing = false;
+            foreach (var dependency in mod.Dependencies)
+            {
+                var modInfo = mods.FirstOrDefault(x => x.ID.Equals(dependency));
+
+                if (modInfo == null)
+                {
+                    Logger.Info($"Mod {mod.ID} is missing dependency {dependency}");
+                    missing = true;
+                    break;
+                }
+                order.Add(modInfo);
+            }
+
+            if (!missing && !order.Contains(mod))
+                order.Add(mod);
+        }
+
+        return order;
     }
 
     private static void CreateInteropFunction(GmlInterop interop, MemberInfo method, string file, UndertaleData data)
