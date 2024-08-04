@@ -109,8 +109,10 @@ public static class Program
 
             foreach (var type in modAssembly.GetTypes())
             {
-                if (type.GetInterfaces().Contains(typeof(ModInfo)))
+                // TODO this is absolutely horrible
+                if (type.GetMethod("Load") != null)
                 {
+                    Logger.Info("calling load method");
                     var instance = (IGMSLMod)Activator.CreateInstance(type)!;
                     Environment.CurrentDirectory = mod.ModDir;
 
@@ -159,7 +161,7 @@ public static class Program
         stream.Dispose();
 
         Logger.Info("Launching game...");
-        Console.ReadLine();
+        //Console.ReadLine();
         StartGame(args, baseDir!);
     }
 
