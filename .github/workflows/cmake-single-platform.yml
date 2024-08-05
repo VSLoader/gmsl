@@ -21,7 +21,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        submodules: 'true'
+        submodules: 'recursive'
 
     - name: Download mono with chocolatey
       run: choco install mono --ignore-checksums -ia "INSTALLFOLDER=C:\Mono"
