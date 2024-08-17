@@ -4,6 +4,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "gmsl-patcher", "gmsl-patcher/gmsl-patcher.csproj", "{53D12B57-F490-4872-BB3F-1185F292E010}"
+EndProject
 Project("{73303D40-0599-4451-BAC3-00415553D1F3}") = "gmsl-modapi", "gmsl-modapi/gmsl-modapi.csproj", "{B365E705-3ACF-45D9-B49E-BEDCD439B959}"
 EndProject
 Global
