@@ -7,9 +7,9 @@ namespace GMSL;
 
 public abstract class GMSLMod
 {
-	string modDir;
-	string scriptsDir;
-	string assetsDir;
+	public string modDir;
+	public string scriptsDir;
+	public string assetsDir;
 	private Dictionary<string, string> scripts = new Dictionary<string, string>();
 
 	public UndertaleData moddingData;
