@@ -6,4 +6,4 @@ out/
 vendor/
 bin/
 obj/
-*.sln
+build/*.sln
