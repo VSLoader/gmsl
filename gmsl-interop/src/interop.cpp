@@ -30,15 +30,14 @@ YYEXPORT void YYExtensionInitialise(const struct YYRunnerInterface* _pFunctions,
 	g_pYYRunnerInterface = &gs_runnerInterface;
 	
 	if (_functions_size < sizeof(YYRunnerInterface)) {
-		std::cout << "ERROR : runner interface mismatch in extension DLL" << std::endl;
+		std::cout << "[VSLoader] ERROR : runner interface mismatch in extension DLL" << std::endl;
 	}
 	
-	std::cout << "YYExtensionInitialise CONFIGURED" << std::endl;
+	std::cout << "[VSLoader] YYExtensionInitialise CONFIGURED" << std::endl;
 
-    std::cout << "Loading mods for interop..." << std::endl;
+    std::cout << "[VSLoader] Loading mods for interop..." << std::endl;
     mono_set_assemblies_path("gmsl/interop/lib");
-    domain = mono_jit_init("gmsl");
-
+    domain = mono_jit_init_version("gmsl", "v4.0.30319");
     std::filesystem::path directoryPath("gmsl/mods");
 
     for (const auto& entry : std::filesystem::directory_iterator(directoryPath)) {
@@ -70,10 +69,9 @@ YYEXPORT void interop_function(RValue& Result, CInstance* selfinst, CInstance* o
 {
     MonoImage *image = mods[currentInterop.dll];
     MonoClass* klass = mono_class_from_name(image, currentInterop.ns.c_str(), currentInterop.clazz.c_str());
-    MonoObject* instance = mono_object_new(domain, klass);
-    mono_runtime_object_init(instance);
+//    MonoObject* instance = mono_object_new(domain, klass);
+//    mono_runtime_object_init(instance);
     MonoMethod* method = mono_class_get_method_from_name(klass, currentInterop.function.c_str(), currentInterop.argc);
-    
     void** args = new void*[currentInterop.argc];
     RValue elem;
 
@@ -104,9 +102,9 @@ YYEXPORT void interop_function(RValue& Result, CInstance* selfinst, CInstance* o
 
     MonoObject *exception;
     exception = NULL;
-    MonoObject* returnValue = mono_runtime_invoke(method, instance, args, &exception);
+    MonoObject* returnValue = mono_runtime_invoke(method, NULL, args, &exception);
     if (exception) {
-        std::cout << "Exception thrown in c#" << std::endl;
+        std::cout << "Exception thrown in c# while calling " << currentInterop.function << std::endl;
         MonoClass* pClass = mono_object_get_class(exception);
         void* iter = NULL;
         while (MonoClassField* field = mono_class_get_fields(pClass, &iter)) {
@@ -114,38 +112,41 @@ YYEXPORT void interop_function(RValue& Result, CInstance* selfinst, CInstance* o
             std::cout << "Field Name: " << fieldName << std::endl;
             MonoString* trace;
             mono_field_get_value(exception, field, &trace);
+            if (!trace) continue;
             std::cout << mono_string_to_utf8(trace) << std::endl;
         }
 
-        std::cin.get(); // freeze the program to signify something is wrong
-    }
-    MonoClass* classPtr = mono_object_get_class(returnValue);
-    const char* typeName = mono_class_get_name(classPtr);
-
-    if (std::strcmp(typeName, "Int32") == 0)
-    {
-        Result.kind = VALUE_REAL;
-        Result.val = *(int*)mono_object_unbox(returnValue);
-    }
-    else if (std::strcmp(typeName, "Single") == 0)
-    {
-        Result.kind = VALUE_REAL;
-        Result.val = *(float*)mono_object_unbox(returnValue);
-    }
-    else if (std::strcmp(typeName, "Double") == 0)
-    {
-        Result.kind = VALUE_REAL;
-        Result.val = *(double*)mono_object_unbox(returnValue);
-    }
-    else if (std::strcmp(typeName, "String") == 0)
-    {
-        YYCreateString(&Result, mono_string_to_utf8((MonoString*)returnValue));
-    }
-    else
-    {
-        std::cout << "Cant Convert Type Name: " << typeName << std::endl;
+        // std::cin.get(); // freeze the program to signify something is wrong
         YYCreateString(&Result, "INTEROP ERROR");
     }
+    else {
+        MonoClass* classPtr = mono_object_get_class(returnValue);
+        const char* typeName = mono_class_get_name(classPtr);
 
+        if (std::strcmp(typeName, "Int32") == 0)
+        {
+            Result.kind = VALUE_REAL;
+            Result.val = *(int*)mono_object_unbox(returnValue);
+        }
+        else if (std::strcmp(typeName, "Single") == 0)
+        {
+            Result.kind = VALUE_REAL;
+            Result.val = *(float*)mono_object_unbox(returnValue);
+        }
+        else if (std::strcmp(typeName, "Double") == 0)
+        {
+            Result.kind = VALUE_REAL;
+            Result.val = *(double*)mono_object_unbox(returnValue);
+        }
+        else if (std::strcmp(typeName, "String") == 0)
+        {
+            YYCreateString(&Result, mono_string_to_utf8((MonoString*)returnValue));
+        }
+        else
+        {
+            std::cout << "Cant Convert Type Name: " << typeName << std::endl;
+            YYCreateString(&Result, "INTEROP ERROR");
+        }
+    }
     delete[] args;
 }
