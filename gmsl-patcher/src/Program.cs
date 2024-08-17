@@ -182,7 +182,7 @@ public static class Program
 			if (File.Exists(Path.Combine(baseDir!, "cache.win")))
 				File.Delete(Path.Combine(baseDir!, "cache.win"));
 
-			SetupInterop(data, baseDir!);
+			// SetupInterop(data, baseDir!);
 
 			foreach (var mod in loadOrder)
 			{
@@ -213,21 +213,21 @@ public static class Program
 					return;
 				}
 
-				foreach (var type in mod.Assembly.GetTypes())
-				{
-					foreach (var method in type.GetMembers())
-					{
-						var interop = method.GetCustomAttribute<GmlInterop>();
-						if (interop == null) continue;
+				//foreach (var type in mod.Assembly.GetTypes())
+				//{
+				//	foreach (var method in type.GetMembers())
+				//	{
+				//		var interop = method.GetCustomAttribute<GmlInterop>();
+				//		if (interop == null) continue;
 
-						CreateInteropFunction(
-							interop,
-							method,
-							mod.Name,
-							data
-						);
-					}
-				}
+				//		CreateInteropFunction(
+				//			interop,
+				//			method,
+				//			mod.Name,
+				//			data
+				//		);
+				//	}
+				//}
 			}
 
 			Logger.Info("Saving modified data.win...");
