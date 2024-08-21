@@ -1,7 +1,8 @@
-using System.Reflection;
 using UndertaleModLib;
-using System.Diagnostics;
 using UndertaleModLib.Models;
+using UndertaleModLib.Decompiler;
+using System.Reflection;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Runtime.InteropServices;
@@ -182,15 +183,19 @@ public static class Program
 			if (File.Exists(Path.Combine(baseDir!, "cache.win")))
 				File.Delete(Path.Combine(baseDir!, "cache.win"));
 
+			
+			Logger.Info("Building global function cache");
+			GlobalDecompileContext.BuildGlobalFunctionCache(data);
+
 			// SetupInterop(data, baseDir!);
 
 			foreach (var mod in loadOrder)
 			{
 				try
 				{
-					mod.Instance.Prepare(data, mod, mod.ModDir);
+					mod.Instance.PrepareMod(data, mod, mod.ModDir);
 					mod.Instance.Patch();
-					mod.Instance.Finalize();
+					mod.Instance.FinalizeMod();
 				}
 				catch (Exception ex)
 				{

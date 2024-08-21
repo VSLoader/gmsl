@@ -2,6 +2,7 @@
 using UndertaleModLib;
 using UndertaleModLib.Models;
 using GMSL.Hooker;
+using UndertaleModLib.Decompiler;
 
 namespace GMSL;
 
@@ -19,7 +20,7 @@ public abstract class GMSLMod
 	public abstract void Start();
 
 	// TODO make this automatic? or just use a constructor maybe
-	public void Prepare(UndertaleData data, ModInfo info, string dir)
+	public void PrepareMod(UndertaleData data, ModInfo info, string dir)
 	{
 		Logger.Logger.Info("Preparing mod");
 		moddingData = data;
@@ -33,7 +34,7 @@ public abstract class GMSLMod
 		}
 	}
 
-	public void Finalize()
+	public void FinalizeMod()
 	{
 		Logger.Logger.Info("Finalizing mod");
 		moddingData.FinalizeHooks();
