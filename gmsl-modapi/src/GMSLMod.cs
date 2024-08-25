@@ -11,7 +11,7 @@ public abstract class GMSLMod
 	public string modDir;
 	public string scriptsDir;
 	public string assetsDir;
-	private Dictionary<string, string> scripts = new Dictionary<string, string>();
+	public Dictionary<string, string> scripts = new Dictionary<string, string>();
 
 	public UndertaleData moddingData;
 	public ModInfo modInfo;
