@@ -7,6 +7,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "gmsl-patcher", "gmsl-patche
 EndProject
 Project("{73303D40-0599-4451-BAC3-00415553D1F3}") = "gmsl-modapi", "gmsl-modapi/gmsl-modapi.csproj", "{B365E705-3ACF-45D9-B49E-BEDCD439B959}"
 EndProject
+Project("{3F3658F1-A31F-4052-B800-8A94743DA9E6}") = "UndertaleModLib", "vendor/undertalemodtool-src/UndertaleModLib/UndertaleModLib.csproj", "{22E9BCFF-A1D6-4421-BF3E-CADBC6C7C678}"
+EndProject
+Project("{3FCF5EF3-16A1-4C70-B008-C477CDC63DA7}") = "Underanalyzer", "vendor/undertalemodtool-src/Underanalyzer/Underanalyzer/Underanalyzer.csproj", "{9654D209-0323-43D4-A507-96A78BCFEE3B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{B365E705-3ACF-45D9-B49E-BEDCD439B959}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B365E705-3ACF-45D9-B49E-BEDCD439B959}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B365E705-3ACF-45D9-B49E-BEDCD439B959}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22E9BCFF-A1D6-4421-BF3E-CADBC6C7C678}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22E9BCFF-A1D6-4421-BF3E-CADBC6C7C678}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22E9BCFF-A1D6-4421-BF3E-CADBC6C7C678}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22E9BCFF-A1D6-4421-BF3E-CADBC6C7C678}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9654D209-0323-43D4-A507-96A78BCFEE3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9654D209-0323-43D4-A507-96A78BCFEE3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9654D209-0323-43D4-A507-96A78BCFEE3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9654D209-0323-43D4-A507-96A78BCFEE3B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
