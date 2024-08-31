@@ -32,6 +32,10 @@ public static class Program
 		var gmslDir = Path.GetDirectoryName(Environment.CurrentDirectory);
 		var modDir = Path.Combine(gmslDir!, "mods");
 		var baseDir = Path.GetDirectoryName(gmslDir);
+		var dataPath = Path.Combine(baseDir!, "data.win");
+		var uncompressedDataPath = Path.Combine(baseDir!, "data.uncompressed.win");
+		var statePath = Path.Combine(gmslDir!, "state");
+		var baseStatePath = Path.Combine(gmslDir!, "base_state");
 		var modDirs = Directory.GetDirectories(modDir);
 		var gameExe = args[0];
 
@@ -50,14 +54,15 @@ public static class Program
 		LoadList(Path.Combine(modDir, "whitelist.txt"), _whitelist);
 		LoadList(Path.Combine(modDir, "blacklist.txt"), _blacklist);
 
-		var statePath = Path.Combine(gmslDir!, "state");
-
 		var prevLoaderState = "";
+		var prevBaseState = "";
 		if (File.Exists(statePath)) prevLoaderState = File.ReadAllText(statePath);
+		if (File.Exists(baseStatePath)) prevBaseState = File.ReadAllText(baseStatePath);
 		Logger.Info($"Previous loader state: {prevLoaderState}");
+		Logger.Info($"Previous base state: {prevBaseState}");
 
 		Logger.Info("Hashing data.win...");
-		var stream = File.OpenRead(Path.Combine(baseDir!, "data.win"));
+		var stream = File.OpenRead(dataPath);
 		var dataHash = HashFile(stream);
 		Logger.Info($"data.win hash: {dataHash}");
 
@@ -65,7 +70,11 @@ public static class Program
 
 		Logger.Info("Loading modinfo files...");
 
-		string loaderState = $"{Path.GetFileNameWithoutExtension(gameExe)}+data.win[{dataHash}]+VSLoader[{loaderVer}]";
+		string loaderState = $"{Path.GetFileNameWithoutExtension(gameExe)}+data.win[{dataHash}]";
+
+		string baseState = loaderState;
+
+		loaderState += $"+VSLoader[{loaderVer}]";
 
 		List<ModInfo> mods = new();
 
@@ -173,19 +182,13 @@ public static class Program
 		{
 			Logger.Info("Loader state differs, rebuilding data.win...");
 
-			Logger.Info("Reading data.win...");
-			var data = UndertaleIO.Read(stream, Logger.Error, msg =>
-			{
-				Logger.Info($"[UMT]: {msg}");
-			});
-			stream.Dispose();
+			var data = LoadGameData(stream, uncompressedDataPath, baseState != prevBaseState);
 
 			if (File.Exists(Path.Combine(baseDir!, "cache.win")))
 				File.Delete(Path.Combine(baseDir!, "cache.win"));
 
-			
-			Logger.Info("Building global function cache");
-			GlobalDecompileContext.BuildGlobalFunctionCache(data);
+			Logger.Info("Writing new base state...");
+			File.WriteAllText(baseStatePath, baseState);
 
 			// SetupInterop(data, baseDir!);
 
@@ -242,7 +245,8 @@ public static class Program
 				Logger.Info($"[UMT]: {msg}");
 			});
 			stream.Dispose();
-		} else
+		}
+		else
 		{
 			Logger.Info("Loader state hasn't changed, skipping data.win rebuild.");
 			stream.Dispose();
@@ -282,6 +286,47 @@ public static class Program
 		Logger.Info("Launching game...");
 		// Console.ReadLine();
 		StartGame(args, baseDir!);
+	}
+
+	private static UndertaleData LoadGameData(Stream dataStream, string uncompressedTxtrPath, bool needToDecompress)
+	{
+		UndertaleData data;
+		if (!needToDecompress) Logger.Info("Using cached copy of game data with uncompressed TXTR...");
+		var stream = needToDecompress ? dataStream : File.OpenRead(uncompressedTxtrPath);
+
+		Logger.Info("Reading data.win...");
+		data = UndertaleIO.Read(stream, Logger.Error, msg =>
+		{
+			Logger.Info($"[UMT]: {msg}");
+		});
+		stream.Dispose();
+
+		Logger.Info("Building global function cache");
+		GlobalDecompileContext.BuildGlobalFunctionCache(data);
+
+		if (needToDecompress)
+		{
+			Logger.Info("Disabling texture compression");
+			foreach (var texture in data.EmbeddedTextures)
+			{
+				if (texture != null)
+				{
+					texture.TextureData.FormatBZ2 = false;
+					texture.TextureData.FormatQOI = false;
+				}
+			}
+
+			Logger.Info("Writing data.uncompressed.win");
+
+			var writeStream = File.OpenWrite(uncompressedTxtrPath);
+			UndertaleIO.Write(writeStream, data, msg =>
+			{
+				Logger.Info($"[UMT]: {msg}");
+			});
+			writeStream.Dispose();
+		}
+
+		return data;
 	}
 
 	private static string HashFile(FileStream stream)
