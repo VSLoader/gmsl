@@ -317,7 +317,10 @@ public static class Program
 			}
 
 			Logger.Info("Writing data.uncompressed.win");
-
+			
+			if (File.Exists(uncompressedTxtrPath))
+				File.Delete(uncompressedTxtrPath);
+			
 			var writeStream = File.OpenWrite(uncompressedTxtrPath);
 			UndertaleIO.Write(writeStream, data, msg =>
 			{
