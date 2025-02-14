@@ -311,8 +311,8 @@ public static class Program
 			{
 				if (texture != null)
 				{
-					texture.TextureData.FormatBZ2 = false;
-					texture.TextureData.FormatQOI = false;
+					// texture.TextureData.FormatBZ2 = false;
+					// texture.TextureData.FormatQOI = false;
 				}
 			}
 

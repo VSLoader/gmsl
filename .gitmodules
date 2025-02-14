@@ -1,3 +1,4 @@
 [submodule "vendor/undertalemodtool-src"]
 	path = vendor/undertalemodtool-src
-	url = https://github.com/VSLoader/umt
+	url = https://github.com/Dobby233Liu/UndertaleModTool
+	branch = 2024_11-null-entries-in-chunk-lists-hack
